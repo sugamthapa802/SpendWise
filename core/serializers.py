@@ -58,4 +58,20 @@ class CategorySerializer(serializers.ModelSerializer):
                 message='You already have a category with the same name and type.',
             )
         ]
+
+class TransactionSerializer(serializers.ModelSerializer):
+    category=serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.none()
+    )
+    class Meta:
+        model = Transaction
+        fields = ["user","category","amount","date","description","created_at","updated_at"]
+        read_only_fields = ["user","created_at","updated_at"]
+
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            self.fields['category'].queryset = Category.objects.filter(user=request.user)
+
     

@@ -101,3 +101,35 @@ class Budget(models.Model):
 
     def __str__(self):
         return f"{self.category.name} — {self.month:%Y-%m}: {self.amount}"
+
+
+class Notification(models.Model) :
+    class level(models.TextChoices):
+        WARNING = "warning", "Warning"
+        EXCEEDED = "exceeded", "Exceeded"
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete = models.CASCADE,
+        related_name= "notifications"
+    )
+    level = models.CharField(
+        choices = level.choices,
+        max_length = 20
+        )
+    message = models.CharField(max_length=255)
+    budget = models.ForeignKey(
+        Budget,
+        on_delete = models.CASCADE,
+        related_name= "notifications"
+    )
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "is_read"]),
+        ]
+
+    def __str__(self):
+        return f"[{self.level}] {self.message}"
