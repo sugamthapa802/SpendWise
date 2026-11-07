@@ -74,4 +74,27 @@ class TransactionSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             self.fields['category'].queryset = Category.objects.filter(user=request.user)
 
-    
+class Budget(serializers.ModelSerializer):
+    user = serializers.HiddenField(default = serializers.CurrentUserDefault())
+    class Meta :
+        model = Budget
+        fields = ["id", "user", "category", "month", "limit", "created_at", "updated_at" ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+        validators = UniqueTogetherValidator(
+            queryset = Budget.objects.all(),
+            fields = ["user", "category", "month"],
+            message = "you already have budget set for the same category this month."
+        )
+
+    def __init__(self,*args, **kwargs):
+        super().__init__(self,*args, **kwargs)
+        request = self.context.get("request")
+        if request and request.user.is_authenticated :
+            self.fields["category"].queryset = Category.objects.filter(
+                user = request.user,
+                type = Category.CategoryType.EXPENSE
+            )
+
+    def validate(self,value):
+        return value.replace(day=1)

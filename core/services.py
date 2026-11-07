@@ -1,6 +1,5 @@
 from datetime import date
 from decimal import Decimal
-from django.shortcuts import get_object_or_404
 from django.db.models import Sum
 
 def _next_month(first_of_month: date):
