@@ -1,8 +1,7 @@
-from decimal import Decimal
 from celery import shared_task
 from django.conf import settings
 
-
+@shared_task(bind=True)
 def check_budget_threshold(self,transaction_id):
     from .models import Transaction, Notification, Budget
     from .services import budget_usage
