@@ -74,21 +74,22 @@ class TransactionSerializer(serializers.ModelSerializer):
         if request and request.user.is_authenticated:
             self.fields['category'].queryset = Category.objects.filter(user=request.user)
 
-class Budget(serializers.ModelSerializer):
+class BudgetSerializer(serializers.ModelSerializer):
     user = serializers.HiddenField(default = serializers.CurrentUserDefault())
     class Meta :
         model = Budget
-        fields = ["id", "user", "category", "month", "limit", "created_at", "updated_at" ]
+        fields = ["id", "user", "category", "month", "amount", "created_at", "updated_at" ]
         read_only_fields = ["id", "created_at", "updated_at"]
 
-        validators = UniqueTogetherValidator(
+        validators =[ UniqueTogetherValidator(
             queryset = Budget.objects.all(),
             fields = ["user", "category", "month"],
             message = "you already have budget set for the same category this month."
         )
+        ]
 
     def __init__(self,*args, **kwargs):
-        super().__init__(self,*args, **kwargs)
+        super().__init__(*args, **kwargs)
         request = self.context.get("request")
         if request and request.user.is_authenticated :
             self.fields["category"].queryset = Category.objects.filter(
@@ -96,5 +97,23 @@ class Budget(serializers.ModelSerializer):
                 type = Category.CategoryType.EXPENSE
             )
 
-    def validate(self,value):
+    def validate_month(self, value):
         return value.replace(day=1)
+
+class SummaryQuerySerializer(serializers.Serializer):
+    start = serializers.DateField()
+    end   = serializers.DateField()
+
+    def validate(self, attrs):
+        if attrs["start"] > attrs["end"]:
+            raise serializers.ValidationError("start must be <= end.")
+        return attrs
+
+
+class CashFlowSummarySerializer(serializers.Serializer):
+    period_start = serializers.DateField()
+    period_end   = serializers.DateField()
+    income       = serializers.DecimalField(max_digits=12, decimal_places=2)
+    expense      = serializers.DecimalField(max_digits=12, decimal_places=2)
+    net          = serializers.DecimalField(max_digits=12, decimal_places=2)
+    transaction_count = serializers.IntegerField()
